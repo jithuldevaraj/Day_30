@@ -1,6 +1,7 @@
 import tkinter
 from tkinter import messagebox
 import random
+import json
 
 
 
@@ -31,9 +32,12 @@ def generate_password():
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save(event=None):
     # 1. Get the data
-    website = website_entry.get()
+    website = website_entry.get().lower().strip()
     email = email_entry.get()
     password = password_entry.get()
+
+    new_data = {website : {"email":email,
+                          "password":password}}
 
     # Field empty check
     if len(website) == 0 or len(email) == 0 or len(password) == 0:
@@ -44,16 +48,31 @@ def save(event=None):
         is_ok = messagebox.askokcancel(title=website, message=f"\nEmail: {email}"
                                                               f"\nPassword: {password} \n\nis it ok to save ?")
         if is_ok:
-            # 2.Open the file in append mode and write the data
-            with open("./data.txt", mode="a") as data_file:
-                data_file.write(f"{website}  |  {email}  |  {password}\n")
 
-            # 3.Clear the website and password entries
-            website_entry.delete(0, tkinter.END)
-            password_entry.delete(0, tkinter.END)
+            try:
+                # STEP 1 READ -- Open the file in "r" (Read) mode
+                with open("data.json", "r") as data_file:
+                    #Convert the JSON file contents into a python dictionary
+                    data = json.load(data_file)
+            except (FileNotFoundError, json.JSONDecodeError):
+                with open("data.json", "w") as data_file:
+                    #Create data.json file and write data
+                    json.dump(new_data, data_file, indent=4)
+            else:
+                # STEP 2 UPDATE -- update the dictionary with your new information
+                data.update(new_data)
+                # STEP 3 WRITE -- Re-open the same file in "w" (write) mode and dump the updated dictionary back in
+                with open("data.json", "w") as data_file:
+                    json.dump(data, data_file, indent=4)
+            finally:
+                # 3.Clear the website and password entries
+                website_entry.delete(0, tkinter.END)
+                password_entry.delete(0, tkinter.END)
 
-            # 4.Put the cursor back in website entry
-            website_entry.focus()
+                # 4.Put the cursor back in website entry
+                website_entry.focus()
+
+# ---------------------------- SEARCH PASSWORD ------------------------------- #
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -71,9 +90,12 @@ canvas.grid(row=0, column=1)
 #  labels and Entries
 website_label = tkinter.Label(text="Website : ")
 website_label.grid(row=1, column=0, sticky="E") # Aligns label to the right (East)
-website_entry = tkinter.Entry(width=35)
+website_entry = tkinter.Entry(width=21)
 website_entry.grid(row=1, column=1, columnspan=2, sticky="EW") # Stretches to fill space
 website_entry.focus()
+
+search_button = tkinter.Button(text="Search", command=find_password)
+search_button.grid(row=1, column=2, sticky="EW")
 
 email_label = tkinter.Label(text="Email/Username : ")
 email_label.grid(row=2, column=0, sticky="E")
