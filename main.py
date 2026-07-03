@@ -73,6 +73,46 @@ def save(event=None):
                 website_entry.focus()
 
 # ---------------------------- SEARCH PASSWORD ------------------------------- #
+def find_password():
+    website = website_entry.get().lower().strip()
+
+    # 1. Early check to make sure they actually typed something
+    if len(website) == 0:
+        messagebox.showinfo("Error", "Please enter a website to search.")
+        return  # Stops the function right here so it doesn't try to open the file
+
+    try:
+        # 2. TRY: The Risky Operations
+        # Try to open the file, load the JSON, and find the specific website
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+
+        # If the website isn't in the dictionary, this exact line triggers a KeyError
+        credentials = data[website]
+
+    except (FileNotFoundError, json.JSONDecodeError):
+        # 3. EXCEPT: Catch missing or empty files
+        # Runs if data.json got deleted or is totally blank
+        messagebox.showinfo("Error", "No data file found. Save a password first!")
+
+    except KeyError:
+        # 4. EXCEPT: Catch missing data
+        # Catch the KeyError if the user searched for a website we haven't saved yet
+        messagebox.showinfo("Not Found", f"No details for '{website.title()}' exist.")
+
+    else:
+        # 5. ELSE: The Happy Path
+        # Runs ONLY if the file was found AND the website was in the dictionary
+        password_entry.delete(0, tkinter.END)
+        messagebox.showinfo(title=website.title(),
+                            message=f"Email: {credentials['email']}\n"
+                                    f"Password: {credentials['password']}")
+
+    finally:
+        # 6. FINALLY: The Cleanup
+        # Runs every time to clear the search box and prepare for the next search
+        website_entry.delete(0, tkinter.END)
+        website_entry.focus()
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -89,9 +129,9 @@ canvas.grid(row=0, column=1)
 
 #  labels and Entries
 website_label = tkinter.Label(text="Website : ")
-website_label.grid(row=1, column=0, sticky="E") # Aligns label to the right (East)
-website_entry = tkinter.Entry(width=21)
-website_entry.grid(row=1, column=1, columnspan=2, sticky="EW") # Stretches to fill space
+website_label.grid(row=1, column=0, sticky="E" ) # Aligns label to the right (East)
+website_entry = tkinter.Entry(width=32)
+website_entry.grid(row=1, column=1, sticky="W") # Stretches to fill space
 website_entry.focus()
 
 search_button = tkinter.Button(text="Search", command=find_password)
@@ -105,8 +145,8 @@ email_entry.insert(0, "studynumber0001@gmail.com")
 
 password_label= tkinter.Label(text= "Password : ")
 password_label.grid(row=3, column=0, sticky="E")
-password_entry = tkinter.Entry(width=21)
-password_entry.grid(row=3, column=1, sticky="EW")
+password_entry = tkinter.Entry(width=32)
+password_entry.grid(row=3, column=1, sticky="W")
 
 generate_password_button = tkinter.Button(text="Generate Password", command=generate_password)
 generate_password_button.grid(row=3, column=2, sticky="EW") # Stretches to match the layout
